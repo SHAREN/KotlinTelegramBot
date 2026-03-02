@@ -165,8 +165,7 @@ fun main(args: Array<String>) {
         }
     }
     while (true) {
-        Thread.sleep(2000)
-        val responseString: String = telegramBotService.getUpdates(botToken, lastUpdateId)
+        val responseString: String = telegramBotService.getUpdates(botToken, lastUpdateId, timeoutSeconds = 30)
         println(responseString)
         val response: Response = json.decodeFromString(responseString)
         if (response.result.isEmpty()) continue
