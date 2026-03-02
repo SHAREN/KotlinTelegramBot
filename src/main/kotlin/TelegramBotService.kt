@@ -33,11 +33,22 @@ class TelegramBotService {
         return response.body()
     }
 
-    fun sendQuestion(json: Json, botToken: String, chatId: Long, question: Question): String? {
+    fun sendQuestion(
+        json: Json,
+        botToken: String,
+        chatId: Long,
+        question: Question,
+        prefixText: String? = null,
+    ): String? {
         val urlSendQuestion = "$TELEGRAM_BASE_URL$botToken/sendMessage"
+        val questionText = if (prefixText.isNullOrBlank()) {
+            question.correctAnswer.original
+        } else {
+            "$prefixText\n\n${question.correctAnswer.original}"
+        }
         val requestBody = SendMessageRequest(
             chatId = chatId,
-            text = question.correctAnswer.original,
+            text = questionText,
             replyMarkup = ReplyMarkup(
                 listOf(question.variants.mapIndexed { index, word ->
                     InlineKeyboard(

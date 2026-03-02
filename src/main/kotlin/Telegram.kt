@@ -85,12 +85,18 @@ fun main(args: Array<String>) {
         botToken: String,
         chatId: Long,
         json: Json,
+        prefixText: String? = null,
     ) {
         val question = trainer.getNextQuestion()
         if (question == null) {
-            telegramBotService.sendMessage(json, botToken, chatId, "Вы выучили все слова в базе")
+            val doneText = if (prefixText.isNullOrBlank()) {
+                "Вы выучили все слова в базе"
+            } else {
+                "$prefixText\n\nВы выучили все слова в базе"
+            }
+            telegramBotService.sendMessage(json, botToken, chatId, doneText)
         } else {
-            telegramBotService.sendQuestion(json, botToken, chatId, question)
+            telegramBotService.sendQuestion(json, botToken, chatId, question, prefixText)
         }
     }
 
@@ -145,17 +151,19 @@ fun main(args: Array<String>) {
 
                 if (userAnswerIndex != null) {
 
-                    if (trainer.checkAnswer(userAnswerIndex)) {
-                        telegramBotService.sendMessage(json, botToken, chatId, "Правильно!")
+                    val feedbackText = if (trainer.checkAnswer(userAnswerIndex)) {
+                        "✅ Правильно!"
                     } else {
-                        telegramBotService.sendMessage(
-                            json,
-                            botToken,
-                            chatId,
-                            "Неправильно! ${trainer.question?.correctAnswer?.original} - это ${trainer.question?.correctAnswer?.translate}"
-                        )
+                        "❌ Неправильно! ${trainer.question?.correctAnswer?.original} - это ${trainer.question?.correctAnswer?.translate}"
                     }
-                    checkNextQuestionAndSend(trainer, telegramBotService, botToken, chatId, json)
+                    checkNextQuestionAndSend(
+                        trainer,
+                        telegramBotService,
+                        botToken,
+                        chatId,
+                        json,
+                        prefixText = feedbackText,
+                    )
                 }
             }
             if (data == CALLBACK_DATA_RESET) {
