@@ -8,6 +8,14 @@ import kotlin.test.Test
 
 class LearnWordsTrainerTest {
 
+    private fun copyFixtureToTemp(path: String): String {
+        val source = File(path)
+        val temp = kotlin.io.path.createTempFile(prefix = "words_", suffix = ".txt").toFile()
+        source.copyTo(temp, overwrite = true)
+        temp.deleteOnExit()
+        return temp.absolutePath
+    }
+
     @Test
     fun `test statistics with 4 words of 7`() {
         val trainer = LearnWordsTrainer("src/test/4_words_of_7.txt")
@@ -24,6 +32,7 @@ class LearnWordsTrainerTest {
         }
         assertEquals("некорректный файл", exception.message)
     }
+
     @Test
     fun `test getNextQuestion() with 5 unlearned words`() {
         val trainer = LearnWordsTrainer("src/test/5_unlearned_words.txt")
@@ -44,7 +53,7 @@ class LearnWordsTrainerTest {
 
     @Test
     fun `test getNextQuestion() with all words learned`() {
-        val trainer = LearnWordsTrainer("src/test/4_words_of_7.txt")
+        val trainer = LearnWordsTrainer("src/test/all_learned_words.txt")
         kotlin.test.assertEquals(
             null,
             trainer.getNextQuestion()
@@ -53,7 +62,7 @@ class LearnWordsTrainerTest {
 
     @Test
     fun `test checkAnswer() with true`() {
-        val trainer = LearnWordsTrainer("src/test/4_words_of_7.txt")
+        val trainer = LearnWordsTrainer(copyFixtureToTemp("src/test/4_words_of_7.txt"))
         val question = trainer.getNextQuestion()
         trainer.question = question
         val index = trainer.question?.correctAnswer?.original
@@ -67,7 +76,7 @@ class LearnWordsTrainerTest {
 
     @Test
     fun `test checkAnswer() with false`() {
-        val trainer = LearnWordsTrainer("src/test/4_words_of_7.txt")
+        val trainer = LearnWordsTrainer(copyFixtureToTemp("src/test/4_words_of_7.txt"))
         val question = trainer.getNextQuestion()
         trainer.question = question
         val index = trainer.question?.correctAnswer?.original
@@ -81,11 +90,9 @@ class LearnWordsTrainerTest {
 
     @Test
     fun `test resetProgress() with 2 words in dictionary`() {
-        val trainer = LearnWordsTrainer("src/test/reset_word.txt")
+        val trainer = LearnWordsTrainer(copyFixtureToTemp("src/test/reset_word.txt"))
         trainer.resetProgress()
         val allZero = trainer.dictionary.all { it.correctAnswersCount == 0 }
-        assertTrue(
-            allZero
-            )
+        assertTrue(allZero)
     }
 }
