@@ -23,9 +23,51 @@ data class Response(
 @Serializable
 data class Message(
     @SerialName("text")
-    val text: String,
+    val text: String? = null,
     @SerialName("chat")
     val chat: Chat,
+    @SerialName("document")
+    val document: Document? = null,
+)
+
+@Serializable
+data class Document(
+    @SerialName("file_name")
+    val fileName: String,
+    @SerialName("mime_type")
+    val mimeType: String,
+    @SerialName("file_id")
+    val fileId: String,
+    @SerialName("file_unique_id")
+    val fileUniqueId: String,
+    @SerialName("file_size")
+    val fileSize: Long,
+)
+
+@Serializable
+data class GetFileRequest(
+    @SerialName("file_id")
+    val fileId: String,
+)
+
+@Serializable
+data class GetFileResponse(
+    @SerialName("ok")
+    val ok: Boolean,
+    @SerialName("result")
+    val result: TelegramFile? = null,
+)
+
+@Serializable
+data class TelegramFile(
+    @SerialName("file_id")
+    val fileId: String,
+    @SerialName("file_unique_id")
+    val fileUniqueId: String,
+    @SerialName("file_size")
+    val fileSize: Long,
+    @SerialName("file_path")
+    val filePath: String,
 )
 
 @Serializable
@@ -108,6 +150,7 @@ fun main(args: Array<String>) {
     fun handleUpdate(firstUpdate: Update, json: Json, botToken: String, trainers: HashMap<Long, LearnWordsTrainer>) {
 
         val message = firstUpdate.message?.text
+        val document = firstUpdate.message?.document
         val chatId = firstUpdate.message?.chat?.id ?: firstUpdate.callbackQuery?.message?.chat?.id ?: return
         val data = firstUpdate.callbackQuery?.data
         val callbackQuery = firstUpdate.callbackQuery
@@ -117,6 +160,15 @@ fun main(args: Array<String>) {
         val trainer = trainers.getOrPut(chatId) { LearnWordsTrainer("$chatId.txt") }
         if (message == "/start") {
             telegramBotService.sendMenu(json, botToken, chatId)
+        }
+
+        if (document != null) {
+            val jsonResponse = telegramBotService.getFile(botToken, document.fileId, json)
+            println("getFile response: $jsonResponse")
+            val response: GetFileResponse = json.decodeFromString(jsonResponse)
+            response.result?.let {
+                telegramBotService.downloadFile(botToken, it.filePath, it.fileUniqueId)
+            }
         }
 
         if (data != null) {

@@ -1,6 +1,8 @@
 package org.example
 
 import kotlinx.serialization.json.Json
+import java.io.File
+import java.io.InputStream
 import java.net.URI
 import java.net.http.HttpClient
 import java.net.http.HttpRequest
@@ -94,6 +96,36 @@ class TelegramBotService {
         return response.body()
     }
 
+    fun getFile(botToken: String, fileId: String, json: Json): String {
+        val urlGetFile = "$TELEGRAM_BASE_URL$botToken/getFile"
+        val requestBody = GetFileRequest(fileId = fileId)
+        val requestBodyString = json.encodeToString(requestBody)
+        val request: HttpRequest = HttpRequest.newBuilder()
+            .uri(URI.create(urlGetFile))
+            .header("Content-type", "application/json")
+            .POST(HttpRequest.BodyPublishers.ofString(requestBodyString))
+            .build()
+        val response: HttpResponse<String> = client.send(request, HttpResponse.BodyHandlers.ofString())
+        return response.body()
+    }
+
+    fun downloadFile(botToken: String, filePath: String, fileName: String) {
+        val urlGetFile = "$TELEGRAM_FILE_BASE_URL$botToken/$filePath"
+        val request = HttpRequest
+            .newBuilder()
+            .uri(URI.create(urlGetFile))
+            .GET()
+            .build()
+        val response: HttpResponse<InputStream> = client.send(request, HttpResponse.BodyHandlers.ofInputStream())
+        println("downloadFile status code: ${response.statusCode()}")
+        val body: InputStream = response.body()
+        body.use { input ->
+            File(fileName).outputStream().use { output ->
+                input.copyTo(output, 16 * 1024)
+            }
+        }
+    }
+
     fun answerCallbackQuery(botToken: String, callbackQueryId: String) {
         val url = "$TELEGRAM_BASE_URL$botToken/answerCallbackQuery"
         val requestBody = Json.encodeToString(mapOf("callback_query_id" to callbackQueryId))
@@ -107,6 +139,7 @@ class TelegramBotService {
 }
 
 const val TELEGRAM_BASE_URL = "https://api.telegram.org/bot"
+const val TELEGRAM_FILE_BASE_URL = "https://api.telegram.org/file/bot"
 const val CALLBACK_DATA_LEARN_WORDS = "learn_words_clicked"
 const val CALLBACK_DATA_STATISTICS = "statistics_clicked"
 const val CALLBACK_DATA_RESET = "reset_clicked"
