@@ -70,7 +70,12 @@ data class InlineKeyboard(
 
 fun main(args: Array<String>) {
 
-    val botToken = args[0]
+    val botToken = args.firstOrNull()?.takeIf { it.isNotBlank() }
+        ?: System.getenv("BOT_TOKEN")?.takeIf { it.isNotBlank() }
+        ?: run {
+            println("Bot token is missing. Pass it as first argument or set BOT_TOKEN env var.")
+            return
+        }
     var lastUpdateId = 0L
     val telegramBotService = TelegramBotService()
     val trainers = HashMap<Long, LearnWordsTrainer>()
